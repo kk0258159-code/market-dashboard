@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四大導師即時戰情室 × Python 數據連線版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-emerald-400 flex items-center gap-2">
+                <span>⚡</span> 四大導師即時戰情室 (Python 數據源)
+            </h1>
+            <div class="text-sm text-slate-400 flex items-center gap-2">
+                <span id="update-time" class="text-xs text-slate-400">讀取中...</span>
+                <button onclick="loadLocalData()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition">🔄 重新整理 (F5)</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+        <!-- 綜合評分與市場指標 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 氣氛評分卡 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+                <div>
+                    <h2 class="text-slate-400 text-sm font-medium">即時大盤多空氣氛綜合評分</h2>
+                    <div class="flex items-baseline gap-2 mt-2">
+                        <span id="score-val" class="text-5xl font-extrabold text-emerald-400">--</span>
+                        <span class="text-slate-400 text-lg">/ 100 分</span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                        <div id="score-bar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%;"></div>
+                    </div>
+                    <p id="score-desc" class="text-sm text-slate-300 mt-2">正從本地市場資料庫讀取最新數據...</p>
+                </div>
+            </div>
+
+            <!-- 即時關鍵指標 -->
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-slate-400 text-sm font-medium mb-4">核心市場指標 (Python 實時同步)</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-400">VIX 恐慌指數</div>
+                        <div id="val-vix" class="text-lg font-bold text-amber-400 mt-1">--</div>
+                        <div id="desc-vix" class="text-xs text-slate-400 mt-1">即時報價</div>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-400">台積電 (2330.TW)</div>
+                        <div id="val-tsmc" class="text-lg font-bold text-slate-200 mt-1">--</div>
+                        <div id="desc-tsmc" class="text-xs text-slate-400 mt-1">即時報價</div>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-400">美股 QQQ</div>
+                        <div id="val-qqq" class="text-lg font-bold text-slate-200 mt-1">--</div>
+                        <div id="desc-qqq" class="text-xs text-slate-400 mt-1">即時報價</div>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-400">美元/台幣 (TWD=X)</div>
+                        <div id="val-fx" class="text-lg font-bold text-slate-200 mt-1">--</div>
+                        <div id="desc-fx" class="text-xs text-slate-400 mt-1">即時報價</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🌟 四大導師即時評分與戰情解析 (新增區塊) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2 mb-4">
+                <span>🛡️</span> 四大導師即時評分與戰情解讀
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- ASHIN -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs bg-blue-950 text-blue-400 px-2.5 py-1 rounded-md font-semibold">總經趨勢</span>
+                            <span id="score-ashin" class="text-sm font-extrabold text-emerald-400">--分</span>
+                        </div>
+                        <h3 class="font-bold text-slate-200 text-sm">通勤族飆股報告書</h3>
+                        <p id="comment-ashin" class="text-xs text-slate-300 mt-2 leading-relaxed">讀取數據中...</p>
+                    </div>
+                    <div id="badge-ashin" class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 font-semibold">● 狀態：評估中</div>
+                </div>
+
+                <!-- 謝晨彥 -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs bg-purple-950 text-purple-400 px-2.5 py-1 rounded-md font-semibold">法人期權</span>
+                            <span id="score-hsieh" class="text-sm font-extrabold text-amber-400">--分</span>
+                        </div>
+                        <h3 class="font-bold text-slate-200 text-sm">謝晨彥分析師</h3>
+                        <p id="comment-hsieh" class="text-xs text-slate-300 mt-2 leading-relaxed">讀取數據中...</p>
+                    </div>
+                    <div id="badge-hsieh" class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-amber-400 font-semibold">● 狀態：評估中</div>
+                </div>
+
+                <!-- 老王 -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs bg-emerald-950 text-emerald-400 px-2.5 py-1 rounded-md font-semibold">技術型態</span>
+                            <span id="score-lw" class="text-sm font-extrabold text-emerald-400">--分</span>
+                        </div>
+                        <h3 class="font-bold text-slate-200 text-sm">老王愛說笑</h3>
+                        <p id="comment-lw" class="text-xs text-slate-300 mt-2 leading-relaxed">讀取數據中...</p>
+                    </div>
+                    <div id="badge-lw" class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 font-semibold">● 狀態：評估中</div>
+                </div>
+
+                <!-- 權證小哥 -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs bg-rose-950 text-rose-400 px-2.5 py-1 rounded-md font-semibold">籌碼主力</span>
+                            <span id="score-brother" class="text-sm font-extrabold text-emerald-400">--分</span>
+                        </div>
+                        <h3 class="font-bold text-slate-200 text-sm">權證小哥</h3>
+                        <p id="comment-brother" class="text-xs text-slate-300 mt-2 leading-relaxed">讀取數據中...</p>
+                    </div>
+                    <div id="badge-brother" class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-emerald-400 font-semibold">● 狀態：評估中</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 個人持股即時監控清單 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <span>🎯</span> 個人資產即時監控清單
+                </h2>
+                <span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full">配置目標：70% 核心 / 30% 衛星</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-xs text-slate-400">
+                            <th class="p-3">分類</th>
+                            <th class="p-3">標的名稱</th>
+                            <th class="p-3">代號</th>
+                            <th class="p-3">即時狀態 / 導師綜合建議</th>
+                            <th class="p-3 text-right">策略行動</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800 text-sm">
+                        <tr class="hover:bg-slate-850/50">
+                            <td class="p-3"><span class="bg-blue-950 text-blue-400 text-xs px-2.5 py-1 rounded-md">國泰核心</span></td>
+                            <td class="p-3 font-bold">富邦台 50</td>
+                            <td class="p-3 text-slate-400">006208.TW</td>
+                            <td class="p-3 text-xs text-slate-300">台股市值核心，定期定額持續累積低成本單位數。</td>
+                            <td class="p-3 text-right font-semibold text-emerald-400">維持每月扣 5 萬</td>
+                        </tr>
+                        <tr class="hover:bg-slate-850/50">
+                            <td class="p-3"><span class="bg-blue-950 text-blue-400 text-xs px-2.5 py-1 rounded-md">國泰核心</span></td>
+                            <td class="p-3 font-bold">Invesco QQQ</td>
+                            <td class="p-3 text-slate-400">QQQ</td>
+                            <td class="p-3 text-xs text-slate-300">美股科技創新霸主，美元資產配置主力。</td>
+                            <td class="p-3 text-right font-semibold text-emerald-400">維持每月扣 5 萬</td>
+                        </tr>
+                        <tr class="hover:bg-slate-850/50">
+                            <td class="p-3"><span class="bg-purple-950 text-purple-400 text-xs px-2.5 py-1 rounded-md">元大衛星</span></td>
+                            <td class="p-3 font-bold">貿聯-KY</td>
+                            <td class="p-3 text-slate-400">3665.TW</td>
+                            <td class="p-3 text-xs text-slate-300">AI 高速傳輸需求強勁，機車沒熄火，抱牢等待輪動。</td>
+                            <td class="p-3 text-right font-semibold text-amber-400">持股不動 / 不殺低</td>
+                        </tr>
+                        <tr class="hover:bg-slate-850/50">
+                            <td class="p-3"><span class="bg-purple-950 text-purple-400 text-xs px-2.5 py-1 rounded-md">元大衛星</span></td>
+                            <td class="p-3 font-bold">亞德客-KY</td>
+                            <td class="p-3 text-slate-400">1590.TW</td>
+                            <td class="p-3 text-xs text-slate-300">本益比修正至 20 倍安全區間，底部築底，堅決不砍。</td>
+                            <td class="p-3 text-right font-semibold text-amber-400">堅決不砍 / 靜待翻紅</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        async function loadLocalData() {
+            try {
+                // 讀取同資料夾底下的 market_data.json
+                const response = await fetch('market_data.json?t=' + new Date().getTime());
+                if (!response.ok) throw new Error("找不到 market_data.json 檔案，請先執行 Python 抓取腳本！");
+                
+                const data = await response.json();
+
+                // 更新畫面數值
+                document.getElementById('update-time').innerText = `數據時間：${data.update_time}`;
+                document.getElementById('val-vix').innerText = data.vix;
+                document.getElementById('val-tsmc').innerText = `${data.tsmc} (${data.tsmc_chg >= 0 ? '+' : ''}${data.tsmc_chg}%)`;
+                document.getElementById('val-qqq').innerText = `$${data.qqq}`;
+                document.getElementById('val-fx').innerText = data.fx;
+
+                // 氣氛評分
+                document.getElementById('score-val').innerText = data.sentiment_score;
+                document.getElementById('score-bar').style.width = `${data.sentiment_score}%`;
+
+                // 驅動四大導師動態評分與觀點
+                updateMentors(data.vix, data.sentiment_score, data.tsmc_chg);
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('update-time').innerText = "讀取失敗 (請確保 Python 正在運行)";
+                document.getElementById('score-desc').innerText = "無法載入 market_data.json，請確認終端機已執行 python fetch_data.py。";
+            }
+        }
+
+        // 四大導師動態評分與評論運算引擎 (已加入狀態文字同步更新)
+        function updateMentors(vix, score, tsmcChg) {
+            // 1. ASHIN (總經趨勢)
+            let ashinScore = Math.min(95, Math.max(30, score + 2));
+            document.getElementById('score-ashin').innerText = `${ashinScore} 分`;
+            document.getElementById('comment-ashin').innerText = `「VIX ${vix}。大方向 AI 產業鏈沒變，資金輪動就像等紅綠燈，機車沒熄火就安穩定期定額。」`;
+            document.getElementById('badge-ashin').innerHTML = `● 狀態：${ashinScore >= 60 ? '偏多續抱' : '保守觀望'}`;
+
+            // 2. 謝晨彥 (法人期權)
+            let hsiehScore = Math.min(95, Math.max(30, score - 3));
+            document.getElementById('score-hsieh').innerText = `${hsiehScore} 分`;
+            document.getElementById('comment-hsieh').innerText = `「法人期權籌碼震盪，善用每月 10 萬現金流紀律分批佈局。」`;
+            document.getElementById('badge-hsieh').innerHTML = `● 狀態：${hsiehScore >= 60 ? '區間震盪' : '拉回防守'}`;
+
+            // 3. 老王 (技術型態)
+            let lwScore = Math.min(95, Math.max(30, score));
+            document.getElementById('score-lw').innerText = `${lwScore} 分`;
+            document.getElementById('comment-lw').innerText = `「技術面緊盯季線支撐，好公司（貿聯、亞德客）不用自己嚇自己亂砍。」`;
+            document.getElementById('badge-lw').innerHTML = `● 狀態：${lwScore >= 60 ? '守支撐偏多' : '測季線防線'}`;
+
+            // 4. 權證小哥 (籌碼主力)
+            let brotherScore = vix > 20 ? 45 : 75;
+            document.getElementById('score-brother').innerText = `${brotherScore} 分`;
+            document.getElementById('comment-brother').innerText = `「VIX 落在 ${vix}，主力分點洗盤時堅守 70/30 資產配置紀律。」`;
+            document.getElementById('badge-brother').innerHTML = `● 狀態：${vix > 20 ? '警戒避險' : '籌碼穩定'}`;
+        }
+
+        // 網頁載入時自動讀取一次
+        window.onload = loadLocalData;
+    </script>
+</body>
+</html>
