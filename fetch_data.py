@@ -1,11 +1,11 @@
-﻿import json
+import json
 import datetime
-import time  # 1. 引入 time 模組
 import yfinance as yf
 
 def get_market_data():
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 正在向市場 API 抓取最新數據...")
     try:
+        # 抓取關鍵市場指標
         vix_ticker = yf.Ticker("^VIX")
         tsmc_ticker = yf.Ticker("2330.TW")
         qqq_ticker = yf.Ticker("QQQ")
@@ -20,10 +20,12 @@ def get_market_data():
         qqq_price = qqq_ticker.history(period="1d")['Close'].iloc[-1]
         fx_price = fx_ticker.history(period="1d")['Close'].iloc[-1]
 
+        # 計算大盤氣氛評分 (0 ~ 100 分)
         base_score = 68
         score = int(base_score + (tsmc_chg_pct * 8) - (vix_price - 15) * 3)
         score = max(15, min(95, score))
 
+        # 整理成字典格式
         data = {
             "update_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "vix": round(float(vix_price), 2),
@@ -34,22 +36,15 @@ def get_market_data():
             "sentiment_score": score
         }
 
+        # 寫入 market_data.json 檔案
         with open("market_data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
         
-        print(f"[{data['update_time']}] 數據更新成功！VIX: {data['vix']}, 氣氛評分: {data['sentiment_score']}\n")
+        print(f"[{data['update_time']}] 數據更新成功並已寫入 JSON！VIX: {data['vix']}, 氣氛評分: {data['sentiment_score']}")
 
     except Exception as e:
-        print(f"抓取資料發生錯誤: {e}\n")
+        print(f"抓取資料發生錯誤: {e}")
 
 if __name__ == "__main__":
-    print("==================================================")
-    print(" 已啟動自動監控排程：每 5 分鐘自動抓取一次市場數據")
-    print(" 提示：若要關閉程式，請隨時在終端機按 [Ctrl + C]")
-    print("==================================================\n")
-    
-    # 2. 用 while True 讓程式持續運行
-    while True:
-        get_market_data()
-        print("等待 5 分鐘後進行下一次更新...")
-        time.sleep(300)  # 暫停 300 秒（5 分鐘）
+    # 單次執行（配合 GitHub Actions 排程，由雲端定時觸發）
+    get_market_data()
